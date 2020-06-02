@@ -7,17 +7,17 @@
 
 ;- Static Globals
 (setv NB-ROWS 100
-      LEDGER-PATH "data/ledger.csv")
+      LEDGER-PATH "data/ledger.parquet")
 
 ;-
 (defn read-spoken []
   (with [f (open "data/spoken.txt" "r")]
-    (cut (f.read) 0 -1)))
+    (f.read)))
 
 ;-
 (defn load-ledger []
   (if (os.path.exists LEDGER-PATH)
-      (pd.read-csv LEDGER-PATH)
+      (pd.read-parquet LEDGER-PATH)
       (pd.DataFrame :columns ["id" "speaker_id" "cmd_id" "spoken_text"]
         [[0 0 0 ""]])))
 
@@ -33,7 +33,7 @@
     (when (> (len ledger) NB-ROWS)
       (get (. ledger loc) (!= (get ledger "id") (.min (get ledger "id"))))
       (setv (get ledger "id") (- (get ledger "id") 1)))
-    (.to-csv ledger LEDGER-PATH :index False)))
+    (.to-parquet ledger LEDGER-PATH :index False)))
 
 ;-
 (defn think []
