@@ -1,39 +1,28 @@
 ;-
-(require [hy.contrib.walk [let]])
+(require [mino.mu [*]]
+         [mino.thread [*]]
+         [mino.spec [*]]
+         [hy.contrib.walk [let]])
 
 ;-
-(import os
-        [pandas :as pd])
+(import os)
 
 ;- Static Globals
-(setv NB-ROWS 100
-      LEDGER-PATH "data/ledger.csv")
+(setv LEDGER-PATH "data/ledger.csv")
 
 ;-
 (defn read-spoken []
   (with [f (open "data/spoken.txt" "r")]
-    (f.read)))
+    (cut (f.read) 0 -1)))
 
 ;-
-(defn load-ledger []
-  (if (os.path.exists LEDGER-PATH)
-      (pd.read-csv LEDGER-PATH)
-      (pd.DataFrame :columns ["id" "speaker_id" "cmd_id" "spoken_text"]
-        [[0 0 0 ""]])))
-
-;-
-(let [ledger (load-ledger)]
-  (defn listen [self? text command]
-    (setv ledger
-      (.append ledger :ignore-index True
-       {"id" (+ 1 (.max (get ledger "id")))
-        "speaker_id" (if self? 0 1)
-        "cmd_id" command
-        "spoken_text" text}))
-    (when (> (len ledger) NB-ROWS)
-      (get (. ledger loc) (!= (get ledger "id") (.min (get ledger "id"))))
-      (setv (get ledger "id") (- (get ledger "id") 1)))
-    (.to-csv ledger LEDGER-PATH :index False)))
+(defn listen [self? text command]
+  (with [ledger (open LEDGER-PATH "a")]
+    (ledger.write 
+      (.format "{},{},{}\n"
+        (if self? 0 1)
+        command
+        text))))
 
 ;-
 (defn think []
