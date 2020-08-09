@@ -10,12 +10,12 @@
 ;- Static Globals
 (setv LEDGER-PATH "data/ledger.csv")
 
-;-
+;--
 (defn read-spoken []
   (with [f (open "data/spoken.txt" "r")]
-    (cut (f.read) 0 -1)))
+    (.strip (f.read))))
 
-;-
+;--
 (defn listen [self? text command]
   (with [ledger (open LEDGER-PATH "a")]
     (ledger.write 
@@ -24,26 +24,27 @@
         command
         text))))
 
-;-
-(defn think []
-  (let [speak "I am thinking" ;; ADD Model
+;--
+(defn think [spoken]
+  (let [speak (.format "You said : {}" spoken) ;; ADD Model
         command 0] ;; ADD Model
     (listen True speak command)
     (, command speak)))
 
-;-
+;--
 (defn respond [command reply]
   (print (.format "{command},{reply}"
            :command command
            :reply reply)))
 
-;-
+;--
 (defmain [args]
 
-  ;-- Add Spoken Dialogue to Database
-  (listen False (read-spoken) 0)
+  ;- Add Spoken Dialogue to Database
+  (let [spoken (read-spoken)]
+    (listen False (read-spoken) 0)
 
-  ;-- Build Command and Reply
-  (let [thought (think)]
-    (setv (, command reply) thought)
-    (respond command reply)))
+    ;- Build Command and Reply
+    (let [thought (think spoken)]
+      (setv (, command reply) thought)
+      (respond command reply))))
