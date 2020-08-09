@@ -18,7 +18,7 @@
 
 ;- Static Globals
 (setv LEDGER-PATH "data/ledger.csv"
-      VOCAB-PATH "data/vocab.parquet"
+      VOCAB-PATH "data/vocab.csv"
       MODEL-PATH "data/model.pt")
 
 ;--
@@ -32,7 +32,7 @@
 ;--
 (defn read-vocab []
   (if (os.path.exists VOCAB-PATH)
-      (pd.read-parquet VOCAB-PATH)
+      (pd.read-csv VOCAB-PATH)
       (pd.DataFrame [[0 "[START]"] [1 "[END]"] [2 "[MASK]"] [3 "[UNKOWN]"] [4 "[PAD]"]]
                     :columns (, 'TID 'TOKEN))))
 
@@ -106,7 +106,7 @@
       (for [i (range (len new-terms))]
         (setv vocab (.append vocab {'TID (+ maxid i 1) 'TOKEN (get new-terms i)}
                                    :ignore-index True)))
-      (.to-parquet vocab VOCAB-PATH :index False))
+      (.to-csv vocab VOCAB-PATH :index False))
 
     ;- Create Dataset
     (setv dataset (mino/apply (.tolist ledger.text)
