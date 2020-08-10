@@ -57,7 +57,8 @@
     (let [nb-tokens (if nb-tokens nb-tokens (get size 1))
           inds (if indices
                    indices
-                   (np.random.choice nb-tokens (int (* nb-tokens mask-percent)) :replace False))]
+                   (np.random.choice nb-tokens (int (* nb-tokens mask-percent)) :replace False))
+          inds (.long (torch.Tensor inds))]
       (setv (get masked-tensor (, inds)) 2
             (get boolean-mask (, inds)) 1)
       (, masked-tensor (.bool boolean-mask)))))
@@ -71,10 +72,10 @@
           attens (if (and size (< (len attens) size))
                      (np.pad attens (, 0 (- size (len attens))))
                      attens)
-          tokens (.astype tokens "int")
-          attens (.astype attens "int")]
+          tokens (.long (torch.Tensor tokens))
+          attens (.long (torch.Tensor attens))]
       (if masked?
-        (do (setv (, masked-tokens mask-bool) (mask-input (torch.Tensor tokens) nb-tokens))
+        (do (setv (, masked-tokens mask-bool) (mask-input tokens nb-tokens))
             [tokens attens masked-tokens mask-bool])
         [tokens attens]))))
 
@@ -110,15 +111,15 @@
 
     ;- Create Dataset
     (setv dataset (mino/apply (.tolist ledger.text)
-                    (model-input (tokenizer vocab :size 8) :size 8 :masked? True)))
+                    (model-input (tokenizer vocab :size 16) :size 16 :masked? True)))
 
 
     ;- Load Language Model
-    (setv model (load-model (len vocab) 8 (if (os.path.exists MODEL-PATH) MODEL-PATH None))))
+    (setv model (load-model (len vocab) 16 (if (os.path.exists MODEL-PATH) MODEL-PATH None))))
 
   ;- Train Language Model
   (let [epochs 10 batch-size 4
-        dataloader (DataLoader dataset :batch-size batch-size :shuffle True)
+        dataloader (DataLoader dataset :batch-size batch-size :shuffle True :num-workers 0)
         optimizer (AdamW (.parameters model) :lr 2e-5 :correct_bias False)
         device "cpu"]
 
@@ -126,7 +127,7 @@
     (for [e (range epochs)]
       (for [(, i batch) (enumerate dataloader)]
         (setv (, labels attens inputs mask) (lfor b batch (.to b device))
-              (, loss logits) (model :input_ids inputs :attention_mask attens :labels labels)
+              (, loss logits) (model :input_ids inputs :attention_mask attens :masked-lm-labels labels)
               vals (- (get labels mask) (get (torch.argmax logits -1) mask))
               vals (- 1 (torch.clamp (torch.abs vals) 0 1))
               acc (/ (.sum vals) (.sum (.float mask))))
@@ -135,7 +136,7 @@
         (.backward loss)
         (torch.nn.utils.clip_grad_norm_ (.parameters model) 1)
         (.step optimizer)
-        (print (.format "Epoch {}: Batch {} of {}: [Loss: {}; Acc: {}]"
+        (print (.format "Epoch {}: Batch {} of {}: [Loss: {:.4f}; Acc: {:.4f}]"
                  e
                  i
                  (int (/ (len dataset) batch-size))
