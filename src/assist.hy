@@ -18,7 +18,7 @@
 ;--
 (defn listen [self? text command]
   (with [ledger (open LEDGER-PATH "a")]
-    (ledger.write 
+    (ledger.write
       (.format "{},{},{}\n"
         (if self? 0 1)
         command
@@ -42,7 +42,7 @@
 
   ;- Add Spoken Dialogue to Database
   (let [spoken (read-spoken)]
-    (listen False (read-spoken) 0)
+    (listen False spoken 0)
 
     ;- Build Command and Reply
     (let [thought (think spoken)]
