@@ -1,11 +1,9 @@
 ;-
-(require [mino.mu [*]]
-         [mino.thread [*]]
-         [mino.spec [*]]
-         [hy.contrib.walk [let]])
+(require [hy.contrib.walk [let]])
 
 ;-
-(import os)
+(import os
+        [pandas :as pd])
 
 ;- Static Globals
 (setv LEDGER-PATH "data/ledger.csv")
@@ -13,12 +11,17 @@
 ;--
 (defn read-spoken []
   (with [f (open "data/spoken.txt" "r")]
-    (.strip (f.read))))
+    (let [inputs (.split (.strip (f.read)) "\n")
+          inputs1 (.split (first inputs) ",")
+          inputs2 (.split (last inputs) ",")
+          inputs (lfor i (range (len inputs 1)) [(get inputs1 i) (get inputs2 i)])
+          df (pd.DataFrame inputs :columns ["Spoken" "Score"])]
+      (get df "Spoken" (.argmax (get df "Score"))))))
 
 ;--
 (defn listen [self? text command]
   (with [ledger (open LEDGER-PATH "a")]
-    (ledger.write 
+    (ledger.write
       (.format "{},{},{}\n"
         (if self? 0 1)
         command
