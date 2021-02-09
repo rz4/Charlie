@@ -11,11 +11,11 @@
 ;--
 (defn read-spoken []
   (with [f (open "data/spoken.txt" "r")]
-    (let [inputs (.split (.strip (f.read)) "\n")
+    (let [inputs (.split (.strip (f.read)) "\\n")
           inputs1 (.split (first inputs) ",")
           inputs2 (.split (last inputs) ",")
           inputs (lfor i (range (len inputs)) [(get inputs1 i) (get inputs2 i)])
-          df (pd.DataFrame inputs :columns ["Score" "Spoken"])]
+          df (pd.DataFrame inputs :columns ["Spoken" "Score"])]
       (get df "Spoken" (.argmax (.astype (get df "Score") "float"))))))
 
 ;--
