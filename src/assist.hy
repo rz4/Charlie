@@ -16,7 +16,7 @@
           inputs2 (.split (last inputs) ",")
           inputs (lfor i (range (len inputs)) [(get inputs1 i) (get inputs2 i)])
           df (pd.DataFrame inputs :columns ["Spoken" "Score"])]
-      (get df "Spoken" (.argmax (get df "Score"))))))
+      (get df "Spoken" (.argmax (.astype (get df "Score") "float"))))))
 
 ;--
 (defn listen [self? text command]
